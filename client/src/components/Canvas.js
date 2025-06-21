@@ -62,17 +62,17 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
       setJoinedUsername(username);
       setTimeout(() => setJoinedUsername(null), 3000);
     });
+        socket.on("draw-action", (action) => {
+        draw(action, ctxRef.current);
+        setActions(prev => [...prev, action]);
+        });
 
-    socket.on("draw-action", ({ action }) => {
-      draw(action, ctxRef.current);
-      setActions(prev => [...prev, action]);
-    });
 
     socket.on("clear-canvas", () => {
         if (!ctxRef.current || !canvasRef.current) return;
         ctxRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         setActions([]);
-        undoStackRef.current = []; // ✅ Important for others
+        undoStackRef.current = []; 
 });
 
     socket.on("canvas-history", (history) => {
@@ -173,15 +173,22 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
   };
 
   const drawAction = e => {
-    if (!canDraw || !isDrawing || !currentAction) return;
-    const newPoint = getCursorPosition(e);
-    const updatedAction = {
-      ...currentAction,
-      points: [...currentAction.points, newPoint]
-    };
-    redrawAll([...actions, updatedAction]);
-    setCurrentAction(updatedAction);
+  if (!canDraw || !isDrawing || !currentAction) return;
+  const newPoint = getCursorPosition(e);
+  const updatedAction = {
+    ...currentAction,
+    points: [...currentAction.points, newPoint]
   };
+
+  redrawAll([...actions, updatedAction]);
+  setCurrentAction(updatedAction);
+
+  socket.emit('draw-action', {
+    roomId,
+    action: updatedAction
+  });
+};
+
 
   const endDrawing = e => {
     if (!canDraw || !isDrawing || !currentAction) return;

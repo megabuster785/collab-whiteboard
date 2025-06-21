@@ -55,7 +55,10 @@ export default function ChatSidebar({ socket, username, roomId }) {
 
   return (
     <div className="absolute bottom-4 right-4 z-50 pointer-events-auto">
+<<<<<<< HEAD
     
+=======
+>>>>>>> e1db769 (added real time changing)
       <div
         className="relative bg-gray-800 text-white px-4 py-2 rounded-full cursor-pointer hover:bg-gray-700 shadow-md transition-all"
         onClick={() => setIsOpen(!isOpen)}
@@ -65,8 +68,11 @@ export default function ChatSidebar({ socket, username, roomId }) {
           <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-ping" />
         )}
       </div>
+<<<<<<< HEAD
 
     
+=======
+>>>>>>> e1db769 (added real time changing)
       <AnimatePresence>
         {isOpen && (
           <motion.div

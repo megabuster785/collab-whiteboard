@@ -62,8 +62,6 @@ export default function RoomManagerPage() {
           onCancel={() => setShowForm(false)}
         />
       )}
-
-      {/* Room Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {rooms.map((room) => (
           <div

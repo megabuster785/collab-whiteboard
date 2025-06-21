@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import CanvasRoom from './pages/CanvasRoom';
-import RoomManagerPage from './pages/RoomManagerPage'; /
+import RoomManagerPage from './pages/RoomManagerPage'; 
 import socket from './utils/socket';
 import { Toaster } from 'react-hot-toast';
 
