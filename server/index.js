@@ -29,7 +29,7 @@ io.engine.on("connection_error", (err) => {
 });
 
 io.on('connection', socket => {
-  console.log(`🟢 User connected: ${socket.id}`);
+  console.log(`User connected: ${socket.id}`);
 
   socket.on('create-room', ({ roomId, isPrivate, allowedUsers = [], creatorUsername }) => {
     if (!roomId || typeof roomId !== 'string') {
@@ -54,7 +54,7 @@ io.on('connection', socket => {
     canvasHistory[roomId] = [];
     roomUsers[roomId] = [];
 
-    console.log(`✅ Room created: ${roomId} (${isPrivate ? 'Private' : 'Public'})`);
+    console.log(`Room created: ${roomId} (${isPrivate ? 'Private' : 'Public'})`);
     socket.emit('room-created', { roomId });
   });
 
@@ -96,8 +96,8 @@ io.on('connection', socket => {
     const history = canvasHistory[roomId] || [];
     socket.emit('canvas-history', history);
 
-    console.log(`✅ ${cleanUsername} joined room ${roomId} (${user.permission})`);
-    console.log(`📤 Sending canvas history to ${cleanUsername}:`, history.length);
+    console.log(`${cleanUsername} joined room ${roomId} (${user.permission})`);
+    console.log(`Sending canvas history to ${cleanUsername}:`, history.length);
   });
 
   socket.on('draw-action', ({ roomId, action }) => {
@@ -115,7 +115,7 @@ io.on('connection', socket => {
 
     canvasHistory[roomId] = [];
     socket.to(roomId).emit('clear-canvas');
-    console.log(`🧹 Canvas cleared for room: ${roomId}`);
+    console.log(`Canvas cleared for room: ${roomId}`);
   });
 
 
@@ -131,10 +131,10 @@ io.on('connection', socket => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔴 User disconnected: ${socket.id}`);
+    console.log(`User disconnected: ${socket.id}`);
   });
 });
 
 server.listen(5000, () => {
-  console.log('🚀 Server listening on port 5000');
+  console.log('Server listening on port 5000');
 });
