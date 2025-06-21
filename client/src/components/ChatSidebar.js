@@ -55,7 +55,7 @@ export default function ChatSidebar({ socket, username, roomId }) {
 
   return (
     <div className="absolute bottom-4 right-4 z-50 pointer-events-auto">
-      {/* Toggle Button */}
+    
       <div
         className="relative bg-gray-800 text-white px-4 py-2 rounded-full cursor-pointer hover:bg-gray-700 shadow-md transition-all"
         onClick={() => setIsOpen(!isOpen)}
@@ -66,7 +66,7 @@ export default function ChatSidebar({ socket, username, roomId }) {
         )}
       </div>
 
-      {/* Animated Chat Panel */}
+    
       <AnimatePresence>
         {isOpen && (
           <motion.div
