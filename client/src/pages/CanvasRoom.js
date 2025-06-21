@@ -25,17 +25,15 @@ export default function CanvasRoom({ socket }) {
     const creatorFlag = searchParams.get('creator')?.toLowerCase() === 'true';
 
     setIsCreator(creatorFlag);
-
-    // Block if username is missing from URL and cannot fallback
   
     socket.on('connect', () => {
-  console.log('🟢 Socket connected:', socket.id);
+  console.log('Socket connected:', socket.id);
 });
 socket.on('disconnect', (reason) => {
-  console.log('🔴 Socket disconnected:', reason);
+  console.log('Socket disconnected:', reason);
 });
 socket.on('connect_error', (err) => {
-  console.log('❌ Connection error:', err.message);
+  console.log('Connection error:', err.message);
 });
 
     let finalName = nameFromURL || localStorage.getItem('canvas-username');
@@ -100,7 +98,6 @@ socket.on('connect_error', (err) => {
 
   return (
     <div className="relative w-full h-screen bg-white overflow-hidden">
-      {/* Share Button */}
       <div className="absolute top-4 right-4 z-50">
         <button
           onClick={() => setShowShareBox(true)}
@@ -109,8 +106,6 @@ socket.on('connect_error', (err) => {
           Share
         </button>
       </div>
-
-      {/* Share Modal */}
       {showShareBox && (
         <div className="absolute top-16 right-4 bg-white shadow-lg border border-gray-200 rounded-lg p-4 z-50 w-80">
           <div className="text-sm font-semibold mb-2">Share this room</div>
@@ -159,15 +154,10 @@ socket.on('connect_error', (err) => {
           )}
         </div>
       )}
-
-      {/* Room ID Display */}
       <div className="absolute top-4 left-4 bg-white text-gray-800 text-sm font-medium px-4 py-2 rounded shadow z-50 flex items-center space-x-4">
             <div>Room ID: {roomId}</div>
             <div>Created by: {username}</div>
             </div>
-
-
-      {/* Toolbar */}
       <Toolbar
         tool={tool}
         setTool={setTool}
@@ -180,8 +170,6 @@ socket.on('connect_error', (err) => {
         saveAsPDF={() => window.saveAsPDF?.()}
         canDraw={canDraw}
       />
-
-      {/* Canvas */}
       <div className="h-full w-full">
         <Canvas
           tool={tool}
