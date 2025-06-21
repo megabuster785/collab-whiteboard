@@ -28,7 +28,6 @@ export default function RoomManagerPage() {
     localStorage.setItem('saved-rooms', JSON.stringify([...rooms, newRoom]));
     setRooms((prev) => [...prev, newRoom]);
 
-    // Emit to server
     socket.emit('create-room', {
       roomId,
       isPrivate,
@@ -36,7 +35,7 @@ export default function RoomManagerPage() {
       creatorUsername: username,
     });
 
-    setShowForm(false); // hide form after creation
+    setShowForm(false); 
     navigate(`/room/${roomId}?username=${encodeURIComponent(username)}&creator=true`);
   };
 
