@@ -33,7 +33,6 @@ export default function Toolbar({
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg p-3 rounded flex flex-wrap gap-2 z-10">
-      {/* Tool Buttons */}
       {toolList.map((t) => (
         <button
           key={t}
@@ -50,7 +49,6 @@ export default function Toolbar({
         </button>
       ))}
 
-      {/* Color Picker */}
       <input
         type="color"
         value={color}
@@ -59,8 +57,6 @@ export default function Toolbar({
         className={`h-8 w-8 border rounded cursor-pointer ${disabledStyle}`}
         title="Pick a Color"
       />
-
-      {/* Undo */}
       <button
         onClick={undo}
         disabled={!canDraw}
@@ -69,8 +65,6 @@ export default function Toolbar({
       >
         <Undo2 className="w-5 h-5" />
       </button>
-
-      {/* Redo */}
       <button
         onClick={redo}
         disabled={!canDraw}
@@ -79,8 +73,6 @@ export default function Toolbar({
       >
         <Redo2 className="w-5 h-5" />
       </button>
-
-      {/* Clear */}
       <button
         onClick={clearCanvas}
         disabled={!canDraw}
@@ -89,8 +81,6 @@ export default function Toolbar({
       >
         Clear
       </button>
-
-      {/* Export Dropdown */}
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setShowExportOptions(!showExportOptions)}
