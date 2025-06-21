@@ -208,7 +208,7 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
       const newActions = [...prev];
       const undone = newActions.pop();
       undoStackRef.current.unshift(undone);
-      redrawAll(newActions); // explicitly pass newActions
+      redrawAll(newActions); 
       return newActions;
     });
   };
@@ -218,7 +218,7 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
     setActions(prev => {
       const redone = undoStackRef.current.shift();
       const newActions = [...prev, redone];
-      redrawAll(newActions); // explicitly pass newActions
+      redrawAll(newActions); 
       return newActions;
     });
   };
@@ -259,14 +259,14 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
   return (
     <div className="relative w-full h-screen">
 
-  {/* View-only notice */}
+  
   {creator === false && (
     <div className="fixed top-2 left-1/2 transform -translate-x-1/2 text-red-600 font-semibold text-sm z-50">
       View-only access — editing disabled
     </div>
   )}
 
-  {/* Drawing Canvas */}
+  
   <canvas
     ref={canvasRef}
     onMouseDown={startDrawing}
@@ -276,7 +276,7 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
     className="bg-white w-full h-screen absolute top-0 left-0 z-0"
   />
 
-  {/* Joined user message */}
+  
   {joinedUsername && (
     <div className="absolute top-20 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-lg shadow-md z-50 text-sm animate-fade-in">
       <span className="font-semibold">{joinedUsername}</span> joined the room
@@ -284,7 +284,7 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
   )}
 
 
-  {/* Text Box Input */}
+  
   {canDraw && textBox && (
     <textarea
       autoFocus
