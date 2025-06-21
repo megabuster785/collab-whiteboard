@@ -97,6 +97,7 @@ io.on('connection', socket => {
     socket.emit('canvas-history', history);
 
     console.log(`✅ ${cleanUsername} joined room ${roomId} (${user.permission})`);
+    console.log(`📤 Sending canvas history to ${cleanUsername}:`, history.length);
   });
 
   socket.on('draw-action', ({ roomId, action }) => {

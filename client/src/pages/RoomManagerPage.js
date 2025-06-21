@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import CreateRoomModal from '../components/CreateRoomModal';
+import socket from '../utils/socket';
 
 export default function RoomManagerPage() {
   const [rooms, setRooms] = useState([]);
+  const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -11,29 +14,29 @@ export default function RoomManagerPage() {
     setRooms(stored);
   }, []);
 
-  const handleCreateRoom = () => {
-    let username = localStorage.getItem('canvas-username');
-
-    // Ask for name if not already set
-    if (!username) {
-      username = prompt('Enter your name:') || `User-${Math.floor(Math.random() * 1000)}`;
-      username = username.trim();
-      localStorage.setItem('canvas-username', username);
-    }
-
+  const handleCreateRoom = ({ username, permission, isPrivate }) => {
     const roomId = Math.random().toString(36).substring(2, 10);
-    const roomData = {
+    const newRoom = {
       roomId,
       username,
-      permission: 'owner',
-      isPrivate: true,
+      permission,
+      isPrivate,
       createdAt: new Date().toISOString(),
     };
 
-    const updatedRooms = [...rooms, roomData];
-    localStorage.setItem('saved-rooms', JSON.stringify(updatedRooms));
-    setRooms(updatedRooms);
+    localStorage.setItem('canvas-username', username);
+    localStorage.setItem('saved-rooms', JSON.stringify([...rooms, newRoom]));
+    setRooms((prev) => [...prev, newRoom]);
 
+    // Emit to server
+    socket.emit('create-room', {
+      roomId,
+      isPrivate,
+      allowedUsers: [{ username, permission }],
+      creatorUsername: username,
+    });
+
+    setShowForm(false); // hide form after creation
     navigate(`/room/${roomId}?username=${encodeURIComponent(username)}&creator=true`);
   };
 
@@ -44,15 +47,24 @@ export default function RoomManagerPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">My Rooms</h1>
-      <button
-        onClick={handleCreateRoom}
-        className="px-4 py-2 bg-blue-600 text-white rounded mb-4"
-      >
-        Create Room
-      </button>
+    <div className="p-6 max-w-4xl mx-auto space-y-8">
+      <h1 className="text-3xl font-bold">Collab Notebook</h1>
 
+      {!showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          + Create New Room
+        </button>
+      ) : (
+        <CreateRoomModal
+          onCreate={handleCreateRoom}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {/* Room Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {rooms.map((room) => (
           <div
@@ -61,10 +73,10 @@ export default function RoomManagerPage() {
           >
             <button
               className="absolute top-2 right-2 text-red-600 bg-white rounded-full p-1 hover:text-red-800 z-50"
-                onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteRoom(room.roomId);
-                        }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteRoom(room.roomId);
+              }}
               title="Delete Room"
             >
               <Trash2 size={24} className="cursor-pointer" />
@@ -72,9 +84,7 @@ export default function RoomManagerPage() {
 
             <div
               onClick={() =>
-                navigate(
-                  `/room/${room.roomId}?username=${encodeURIComponent(room.username)}&creator=true`
-                )
+                navigate(`/room/${room.roomId}?username=${encodeURIComponent(room.username)}&creator=true`)
               }
               className="cursor-pointer"
             >

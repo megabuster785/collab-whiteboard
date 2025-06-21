@@ -8,15 +8,14 @@ const socket = io('http://localhost:5000');
 export default function Canvas({ tool, color, canDraw, username, creator }) {
   const canvasRef = useRef();
   const ctxRef = useRef();
+  const undoStackRef = useRef([]);
   const [actions, setActions] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentAction, setCurrentAction] = useState(null);
   const [textBox, setTextBox] = useState(null);
   const [joinedUsername, setJoinedUsername] = useState(null);
-  const undoStackRef = useRef([]);
   const { roomId } = useParams();
 
-  // ==== Clear Canvas ====
   const clearCanvas = useCallback(() => {
     if (!ctxRef.current || !canvasRef.current) return;
     ctxRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -24,29 +23,27 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
     undoStackRef.current = [];
     socket.emit('clear-canvas', roomId);
   }, [roomId]);
-
   useEffect(() => {
-    console.log("creator value:", creator);
-  }, [creator]);
+  window.clearCanvas = clearCanvas;
 
-  // ==== Setup cursor based on tool ====
+  return () => {
+    delete window.clearCanvas;
+  };
+}, [clearCanvas]);
+
+
   useEffect(() => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
-
-    if (tool === 'pen') {
-      canvas.style.cursor = 'crosshair';
-    } else if (tool === 'eraser') {
-      canvas.style.cursor = 'cell';
-    } else if (tool === 'text') {
-      canvas.style.cursor = 'text';
-    } else {
-      canvas.style.cursor = 'default';
-    }
+    if (tool === 'pen') canvas.style.cursor = 'crosshair';
+    else if (tool === 'eraser') canvas.style.cursor = 'cell';
+    else if (tool === 'text') canvas.style.cursor = 'text';
+    else canvas.style.cursor = 'default';
   }, [tool]);
 
-  // ==== Setup canvas + socket listeners ====
   useEffect(() => {
+    if (creator === undefined) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -59,37 +56,29 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
 
     socket.emit("join-room", { roomId, username });
 
-    socket.on("access-denied", () => {
-      alert("Access denied to this room");
-    });
+    socket.on("access-denied", () => alert("Access denied to this room"));
 
     socket.on("user-joined", ({ username }) => {
       setJoinedUsername(username);
       setTimeout(() => setJoinedUsername(null), 3000);
     });
-    
-        
+
     socket.on("draw-action", ({ action }) => {
       draw(action, ctxRef.current);
       setActions(prev => [...prev, action]);
     });
 
     socket.on("clear-canvas", () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      setActions([]);
-    });
+        if (!ctxRef.current || !canvasRef.current) return;
+        ctxRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        setActions([]);
+        undoStackRef.current = []; // ✅ Important for others
+});
 
     socket.on("canvas-history", (history) => {
-      history.forEach(action => draw(action, ctxRef.current));
+      history.forEach(action => draw(action, ctx));
       setActions(history);
     });
-
-    // Expose to window
-    window.canvasUndo = undo;
-    window.canvasRedo = redo;
-    window.clearCanvas = clearCanvas;
-    window.saveAsCanvas = saveAsImage;
-    window.saveAsPDF = saveAsPDF;
 
     return () => {
       socket.emit("leave-room", roomId);
@@ -97,13 +86,25 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
       socket.off("draw-action");
       socket.off("clear-canvas");
       socket.off("canvas-history");
-      socket.off("room-users");
     };
-  }, [clearCanvas, roomId, username]);
+  }, [clearCanvas, roomId, username, creator]);
 
-  // ==== Drawing function ====
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (canvas && ctxRef.current) {
+        const imageData = ctxRef.current.getImageData(0, 0, canvas.width, canvas.height);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctxRef.current.putImageData(imageData, 0, 0);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const draw = (a, ctx) => {
-    if (!a || !a.points || a.points.length === 0) return;
+    if (!a || !a.points?.length) return;
 
     ctx.lineWidth = a.tool === 'eraser' ? 20 : 2;
     ctx.strokeStyle = a.tool === 'eraser' ? 'white' : a.color || 'black';
@@ -141,8 +142,7 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
         const p = a.points[0];
         ctx.font = '18px sans-serif';
         ctx.textBaseline = 'top';
-        const lines = a.text.split('\n');
-        lines.forEach((line, i) => ctx.fillText(line, p.x, p.y + i * 20));
+        a.text.split('\n').forEach((line, i) => ctx.fillText(line, p.x, p.y + i * 20));
         break;
       }
 
@@ -151,11 +151,14 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
     }
   };
 
-  const redrawAll = (act = actions) => {
-    const canvas = canvasRef.current;
-    ctxRef.current.clearRect(0, 0, canvas.width, canvas.height);
-    act.forEach(a => draw(a, ctxRef.current));
-  };
+  const redrawAll = useCallback((act) => {
+  const canvas = canvasRef.current;
+  if (!canvas || !ctxRef.current) return;
+  ctxRef.current.clearRect(0, 0, canvas.width, canvas.height);
+  act.forEach(a => draw(a, ctxRef.current));
+}, []);
+
+
 
   const getCursorPosition = e => {
     const rect = canvasRef.current.getBoundingClientRect();
@@ -163,9 +166,7 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
   };
 
   const startDrawing = e => {
-
     if (!canDraw || tool === 'text') return;
-
     const start = getCursorPosition(e);
     setIsDrawing(true);
     setCurrentAction({ tool, color, points: [start], text: '', username });
@@ -195,56 +196,64 @@ export default function Canvas({ tool, color, canDraw, username, creator }) {
       return updated;
     });
     socket.emit('draw-action', { roomId, action: finishedAction });
-    undoStackRef.current = [];
     setIsDrawing(false);
     setCurrentAction(null);
   };
 
-  // ==== Undo & Redo ====
-  const undo = () => {
+  useEffect(() => {
+  window.canvasUndo = () => {
+    console.log("Undo triggered");
     setActions(prev => {
       if (prev.length === 0) return prev;
       const newActions = [...prev];
-      undoStackRef.current.unshift(newActions.pop());
-      redrawAll(newActions);
+      const undone = newActions.pop();
+      undoStackRef.current.unshift(undone);
+      redrawAll(newActions); // explicitly pass newActions
       return newActions;
     });
   };
 
-  const redo = () => {
+  window.canvasRedo = () => {
     if (undoStackRef.current.length === 0) return;
     setActions(prev => {
-      const restored = undoStackRef.current.shift();
-      const newActions = [...prev, restored];
-      redrawAll(newActions);
+      const redone = undoStackRef.current.shift();
+      const newActions = [...prev, redone];
+      redrawAll(newActions); // explicitly pass newActions
       return newActions;
     });
   };
 
-  // ==== Save ====
-  const saveAsImage = () => {
+  window.saveAsCanvas = () => {
     const canvas = canvasRef.current;
+    if (!canvas) {
+      alert("Canvas not ready");
+      return;
+    }
     const link = document.createElement('a');
     link.download = 'canvas.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
 
-  const saveAsPDF = () => {
+  window.saveAsPDF = () => {
     const canvas = canvasRef.current;
+    if (!canvas) {
+      alert("Canvas not ready");
+      return;
+    }
+
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('l', 'pt', [canvas.width, canvas.height]);
     pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height, undefined, "FAST");
-    pdf.save('canvas.pdf');
+    pdf.save(`canvas-${roomId}.pdf`);
   };
+}, [roomId, redrawAll]);
 
-  // ==== Handle text input ====
   const handleCanvasClick = e => {
     if (!canDraw || tool !== 'text') return;
     const { x, y } = getCursorPosition(e);
     setTextBox({ x, y, value: '' });
   };
-
 
 
   return (
